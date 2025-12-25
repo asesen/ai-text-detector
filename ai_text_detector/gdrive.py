@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 import gdown
@@ -17,6 +18,15 @@ def download_data_from_gdrive(cfg: DictConfig) -> None:
         file_id = meta.id
         filename = meta.name
         output_path = data_dir / filename
+
+        result = subprocess.run(
+            ["dvc", "status", f"data/{meta.name}"], capture_output=True, text=True
+        )
+
+        if "changed" in result.stdout:
+            print("Внимание: данные изменились!")
+        else:
+            print("Данные соответствуют версии в DVC")
 
         if output_path.exists():
             print(f"[SKIP] {filename} already exists")
