@@ -1,0 +1,8 @@
+defaults:
+  - preprocessing: text
+  - training: distilbert
+  - logging: mlflow
+  - data: data
+  - export: onnx
+
+seed: 42

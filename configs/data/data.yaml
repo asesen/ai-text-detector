@@ -1,0 +1,9 @@
+data:
+  gdrive_folder_id: "15czY4tlNo-qltOyX9U2rsD7YkXdn3lzD"
+  files:
+    train: "train_set.csv"
+    val: "validation_set.csv"
+    test: "test_set.csv"
+
+  raw_data_dir: "data/raw"
+  processed_data_dir: "data/processed"

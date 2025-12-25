@@ -1,0 +1,9 @@
+tokenizer:
+  name: distilbert-base-uncased
+  max_length: 512
+  truncation: true
+  padding: max_length
+
+dataset:
+  text_column: text
+  label_column: generated

@@ -12,6 +12,13 @@ license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 python = "~3.11"
+torch = "^2.9.1"
+pytorch-lightning = "^2.6.0"
+transformers = "^4.57.3"
+torchmetrics = "^1.8.2"
+scikit-learn = "^1.8.0"
+dvc = "^3.65.0"
+dvc-gdrive = "^3.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.6.0"
