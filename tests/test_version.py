@@ -1,5 +1,5 @@
-import ds_project
+import ai_text_detector
 
 
 def test_version():
-    assert ds_project.__version__ == "0.1.0"
+    assert ai_text_detector.__version__ == "0.1.0"
