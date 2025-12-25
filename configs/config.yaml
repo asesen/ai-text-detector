@@ -1,4 +1,5 @@
 defaults:
+  - _self_
   - preprocessing: text
   - training: distilbert
   - logging: mlflow

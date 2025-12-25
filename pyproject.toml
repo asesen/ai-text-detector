@@ -19,6 +19,10 @@ torchmetrics = "^1.8.2"
 scikit-learn = "^1.8.0"
 dvc = "^3.65.0"
 dvc-gdrive = "^3.0.1"
+pyopenssl = "22.1.0"
+cryptography = "38.0.4"
+gdown = "^5.2.0"
+fire = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.6.0"

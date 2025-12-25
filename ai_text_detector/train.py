@@ -6,7 +6,7 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 from ai_text_detector.data import TextDataModule
-from ai_text_detector.gdrive import download_dataset_folder
+from ai_text_detector.gdrive import download_data_from_gdrive
 from ai_text_detector.model import DistilBERTClassifier
 from ai_text_detector.plots import plot_training_curves
 from transformers import AutoTokenizer
@@ -25,9 +25,10 @@ def train(cfg):
 
         mlflow.log_param("git_commit", git_commit)
 
-        raw_dir = download_dataset_folder(
-            cfg.data.gdrive_folder_id, Path(cfg.data.raw_data_dir)
-        )
+        download_data_from_gdrive(cfg)
+
+        raw_dir = Path(cfg.data.data_dir)
+
         train_df = pd.read_csv(raw_dir / cfg.data.files.train)
         val_df = pd.read_csv(raw_dir / cfg.data.files.val)
 

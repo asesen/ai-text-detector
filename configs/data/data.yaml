@@ -1,9 +1,12 @@
-data:
-  gdrive_folder_id: "15czY4tlNo-qltOyX9U2rsD7YkXdn3lzD"
-  files:
-    train: "train_set.csv"
-    val: "validation_set.csv"
-    test: "test_set.csv"
+gdrive_files:
+  train:
+    id: "1GoSyyslGvjaZ1ex7EuThwxG-dII0TUae"
+    name: "train_set.csv"
+  val:
+    id: "1sWjyG45VKjqLEyOwpWwrL211qtQ1YVdM"
+    name: "validation_set.csv"
+  test:
+    id: "1TmmDyfagl8REUjh_KNIl8NNbcXwYgcGh"
+    name: "test_set.csv"
 
-  raw_data_dir: "data/raw"
-  processed_data_dir: "data/processed"
+data_dir: "data"

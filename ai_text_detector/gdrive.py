@@ -1,12 +1,28 @@
 from pathlib import Path
 
 import gdown
+from omegaconf import DictConfig
 
 
-def download_dataset_folder(folder_id: str, output_dir: Path) -> Path:
-    output_dir.mkdir(parents=True, exist_ok=True)
+def download_data_from_gdrive(cfg: DictConfig) -> None:
+    """
+    Download files from Google Drive using file IDs.
+    """
 
-    if not any(output_dir.iterdir()):
-        gdown.download_folder(id=folder_id, output=str(output_dir), quiet=False)
+    data_cfg = cfg.data
+    data_dir = Path(data_cfg.data_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
 
-    return output_dir
+    for split, meta in data_cfg.gdrive_files.items():
+        file_id = meta.id
+        filename = meta.name
+        output_path = data_dir / filename
+
+        if output_path.exists():
+            print(f"[SKIP] {filename} already exists")
+            continue
+
+        url = f"https://drive.google.com/uc?id={file_id}"
+        print(f"[DOWNLOAD] {split}: {filename}")
+
+        gdown.download(url=url, output=str(output_path), quiet=False)
