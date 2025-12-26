@@ -1,77 +1,91 @@
-# Template for Data Science Project
+# Human vs. AI text Classification
 
-This repo aims to give a robust starting point to any Data Science related
-project.
+## Постановка задачи
 
-It contains readymade tools setup to start adding dependencies and coding.
+Цель проекта — разработать систему, которая классифицирует текст как написанный
+человеком или сгенерированный искусственным интеллектом.
 
-To get yourself familiar with tools used here watch
-[my talk on Data Science project setup (in Russian)](https://youtu.be/jLIAiDMyseQ)
+## Формат входных и выходных данных
 
-**If you use this repo as a template - leave a star please** because template
-usages don't count in Forks.
+Входные данные: текст произвольной длины
 
-## Workflow
+Выходные данные: 0 или 1 (бинарная классификация)
 
-Experiments and technology discovery are usualy performed on Jupyter Notebooks.
-For them `notebooks` directory is reserved. More info on working with Notebooks
-could be found in `notebooks/README.md`.
+## Формат входных и выходных данных
 
-More mature part of pipeline (functions, classes, etc) are stored in `.py` files
-in main package directory (by default `ds_project`).
+Входные данные: текст произвольной длины
 
-## What to change?
+Выходные данные: 0 или 1 (бинарная классификация)
 
-- project name (default: `ds_project`)
-  - in `pyproject.toml` - tool.poetry.name
-  - main project directory (`ds_project`)
-  - test in `tests` directory
-- line length (default: `90`) [Why 90?](https://youtu.be/esZLCuWs_2Y?t=1287)
-  - in `pyproject.toml` in blocks
-    - black
-    - isort
-  - in `setup.cfg` for `flake8`
-  - in `.pre-commit-config.yaml` for `prettier`
+## Валидация и тест
 
-## How to setup an environment?
+Я поделил данные на трейн, валидацию и тест (их вполне достаточно для такой
+стратегии). Данные загружены на гугл диск
 
-This template use `poetry` to manage dependencies of your project. They
+## Датасеты
 
-First you need to
-[install poetry](https://python-poetry.org/docs/#installation).
+Будет использоваться датасет соревнования Human vs. AI Text Classification (Feb
+2024).
 
-Then if you use `conda` (recommended) to manage environments (to use regular
-virtualenvenv just skip this step):
+https://www.kaggle.com/competitions/human-vs-ai-text-classification-feb2024
 
-- tell `poetry` not to create new virtualenv for you
+Датасет содержит тексты, написанные людьми, и тексты, сгенерированные различными
+моделями ИИ.
 
-  (instead `poetry` will use currently activated virtualenv):
+Порядка 500К текстов (900 МБ)
 
-  `poetry config virtualenvs.create false`
+Классы: human, ai
 
-- create new `conda` environment for your project (change env name for your
-  desired one):
+Тексты различной длины и стиля. Все на английском языке
 
-  `conda create -n ds_project python=3.9`
+Присутствуют как короткие ответы, так и большие эссе.
 
-- actiave environment:
+## Моделирование
 
-  `conda activate ds_project`
+После рассмотрения работы победителей было принято решение дообучать модель на
+основе encoder, был выбран DistillBert, проведены эксперименты с обучением
+только головы и последних слоев. Также были проведены эксперименты с более
+простым подходом (на основе TF-IDF представлений), при незначительной потере
+качество в сравнении с моими экспериментами и доступными работами победителей, они
+показывали значительное ускорение работы, в связи с этим было принято решение
+остановиться на них.
 
-Now you are ready to add dependencies to your project. For this use
-[`add` command](https://python-poetry.org/docs/cli/#add):
+## Setup
 
-`poetry add scikit-learn torch <any_package_you_need>`
+Зависимости в проекте управляются poetry
 
-Next run `poetry install` to check your final state are even with configs.
+Клонируйте проект и создайте виртуальное окружение используя poetry, активируйте
+хуки
 
-After that add changes to git and commit them
-`git add pyproject.toml poetry.lock`
+```
+# Установка зависимостей
+poetry install
 
-Finally add `pre-commit` hooks to git: `pre-commit install`
+# Установка хуков
+poetry run pre-commit install
 
-At this step you are ready to write clean reproducible code!
+# Запуск проверок
+poetry run pre-commit run --all-files
+```
 
-## More tools
+## Train
 
-- Changelog generation: https://towncrier.readthedocs.io/en/stable/
+Вы можете использовать команду
+
+```
+python commands.py download_data
+```
+
+для автоматической загрузки и проверки версии данных (dvc), она также будет
+применена при запуске функции train
+
+Для запуска тренировки используйте команду (предполагается, что сервер MLFlow
+поднят)
+
+```
+python commands.py train
+```
+
+## Production preparation
+
+## Infer

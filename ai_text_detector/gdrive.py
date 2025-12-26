@@ -19,17 +19,17 @@ def download_data_from_gdrive(cfg: DictConfig) -> None:
         filename = meta.name
         output_path = data_dir / filename
 
-        result = subprocess.run(
-            ["dvc", "status", f"data/{meta.name}"], capture_output=True, text=True
-        )
-
-        if "changed" in result.stdout:
-            print("Внимание: данные изменились!")
-        else:
-            print("Данные соответствуют версии в DVC")
-
         if output_path.exists():
             print(f"[SKIP] {filename} already exists")
+
+            result = subprocess.run(
+                ["dvc", "status", f"data/{meta.name}"], capture_output=True, text=True
+            )
+
+            if "changed" in result.stdout:
+                print("Внимание: данные изменились!")
+            else:
+                print("Данные соответствуют версии в DVC")
             continue
 
         url = f"https://drive.google.com/uc?id={file_id}"
