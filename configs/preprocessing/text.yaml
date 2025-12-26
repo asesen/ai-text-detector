@@ -1,8 +1,7 @@
-tokenizer:
-  name: distilbert-base-uncased
-  max_length: 512
-  truncation: true
-  padding: max_length
+tfidf:
+  max_features: 10000
+  ngram_range: [1, 2]
+  stop_words: english
 
 dataset:
   text_column: text

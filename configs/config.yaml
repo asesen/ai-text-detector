@@ -1,7 +1,7 @@
 defaults:
   - _self_
   - preprocessing: text
-  - training: distilbert
+  - training: model
   - logging: mlflow
   - data: data
   - export: onnx

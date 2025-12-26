@@ -1,6 +1,6 @@
 onnx:
   opset: 17
-  output_path: models/onnx/bert_ai_detector.onnx
+  output_path: models/onnx/classifier.onnx
   dynamic_axes:
     input_ids: [0, 1]
     attention_mask: [0, 1]

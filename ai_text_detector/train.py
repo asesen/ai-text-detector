@@ -1,71 +1,109 @@
+# train.py
 import subprocess
 from pathlib import Path
 
-import mlflow
+import joblib
 import pandas as pd
 import pytorch_lightning as pl
 import torch
-from ai_text_detector.data import TextDataModule
 from ai_text_detector.gdrive import download_data_from_gdrive
-from ai_text_detector.model import DistilBERTClassifier
+from ai_text_detector.model import TfidfDataModule, TfidfLogReg
 from ai_text_detector.plots import plot_training_curves
-from transformers import AutoTokenizer
+from pytorch_lightning.loggers import MLFlowLogger
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def train(cfg):
     pl.seed_everything(cfg.seed, workers=True)
 
-    mlflow.set_tracking_uri(cfg.logging.mlflow.tracking_uri)
-    mlflow.set_experiment(cfg.logging.mlflow.experiment_name)
+    mlf_logger = MLFlowLogger(
+        experiment_name=cfg.logging.mlflow.experiment_name,
+        tracking_uri=cfg.logging.mlflow.tracking_uri,
+    )
+    exp = mlf_logger.experiment
+    run_id = mlf_logger.run_id
+    # ======================
+    # GIT COMMIT
+    # ======================
+    git_commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+    exp.log_param(run_id, "git_commit", git_commit)
 
-    with mlflow.start_run():
-        git_commit = (
-            subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
-        )
+    # ======================
+    # LOAD DATA
+    # ======================
+    download_data_from_gdrive(cfg)
 
-        mlflow.log_param("git_commit", git_commit)
+    raw_dir = Path(cfg.data.data_dir)
+    train_df = pd.read_csv(raw_dir / cfg.data.gdrive_files.train.name)
+    val_df = pd.read_csv(raw_dir / cfg.data.gdrive_files.val.name)
 
-        download_data_from_gdrive(cfg)
+    # ======================
+    # TF-IDF
+    # ======================
+    vectorizer = TfidfVectorizer(
+        max_features=cfg.preprocessing.tfidf.max_features,
+        ngram_range=tuple(cfg.preprocessing.tfidf.ngram_range),
+        stop_words=cfg.preprocessing.tfidf.stop_words,
+        sublinear_tf=True,
+    )
 
-        raw_dir = Path(cfg.data.data_dir)
+    X_train = vectorizer.fit_transform(
+        train_df[cfg.preprocessing.dataset.text_column].values
+    ).astype("float32")
+    X_val = vectorizer.transform(
+        val_df[cfg.preprocessing.dataset.text_column].values
+    ).astype("float32")
 
-        train_df = pd.read_csv(raw_dir / cfg.data.files.train)
-        val_df = pd.read_csv(raw_dir / cfg.data.files.val)
+    y_train = train_df[cfg.preprocessing.dataset.label_column].values
+    y_val = val_df[cfg.preprocessing.dataset.label_column].values
 
-        tokenizer = AutoTokenizer.from_pretrained(cfg.preprocessing.tokenizer.name)
+    # сохраняем tf-idf (tf-idx)
+    Path("models").mkdir(exist_ok=True)
+    joblib.dump(vectorizer, "models/tfidf.joblib")
 
-        dm = TextDataModule(train_df, val_df, tokenizer, cfg)
-        model = DistilBERTClassifier(cfg)
+    # ======================
+    # DATAMODULE + MODEL
+    # ======================
+    dm = TfidfDataModule(X_train, y_train, X_val, y_val, cfg)
 
-        trainer = pl.Trainer(
-            max_epochs=cfg.training.training.epochs, accelerator="gpu", devices=1
-        )
+    model = TfidfLogReg(
+        input_dim=X_train.shape[1],
+        cfg=cfg,
+    )
 
-        trainer.fit(model, dm)
+    trainer = pl.Trainer(
+        max_epochs=cfg.training.epochs,
+        accelerator="gpu" if torch.cuda.is_available() else "cpu",
+        devices=1,
+        log_every_n_steps=50,
+        logger=mlf_logger,
+    )
 
-        plots_dir = Path("plots")
-        plot_training_curves(model, plots_dir)
+    trainer.fit(model, dm)
+    # ======================
+    # PLOTS
+    # ======================
+    plots_dir = Path("plots")
+    plot_training_curves(model, plots_dir)
+    exp.log_artifacts(run_id, str(plots_dir))
 
-        mlflow.log_artifacts(str(plots_dir))
+    # ======================
+    # ONNX
+    # ======================
+    onnx_path = Path("models/onnx/model.onnx")
+    onnx_path.parent.mkdir(parents=True, exist_ok=True)
 
-        onnx_path = Path("models/onnx/model.onnx")
-        onnx_path.parent.mkdir(parents=True, exist_ok=True)
+    model.eval()
+    model.cpu()
 
-        dummy = {
-            "input_ids": torch.ones(1, 32, dtype=torch.long).cuda(),
-            "attention_mask": torch.ones(1, 32, dtype=torch.long).cuda(),
-        }
+    dummy = torch.randn(1, X_train.shape[1], dtype=torch.float32)
 
-        torch.onnx.export(
-            model.cuda(),
-            (dummy["input_ids"], dummy["attention_mask"]),
-            onnx_path,
-            opset_version=17,
-            input_names=["input_ids", "attention_mask"],
-            output_names=["logits"],
-            dynamic_axes={"input_ids": {0: "batch"}, "attention_mask": {0: "batch"}},
-        )
-
-        mlflow.log_artifact(str(onnx_path))
-
-        mlflow.pytorch.log_model(model, "model")
+    torch.onnx.export(
+        model,
+        dummy,
+        onnx_path,
+        opset_version=17,
+        input_names=["input"],
+        output_names=["logits"],
+        dynamic_axes={"input": {0: "batch"}},
+    )
