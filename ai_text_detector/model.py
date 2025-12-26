@@ -50,12 +50,17 @@ class TfidfDataModule(pl.LightningDataModule):
         )
 
 
-class TfidfLogReg(pl.LightningModule):
+class BinaryClassNN(pl.LightningModule):
     def __init__(self, input_dim, cfg):
         super().__init__()
         self.save_hyperparameters(ignore=["cfg"])
 
-        self.linear = nn.Linear(input_dim, 1)
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, cfg.training.hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(cfg.training.dropout),
+            nn.Linear(cfg.training.hidden_dim, 1),
+        )
         self.criterion = nn.BCEWithLogitsLoss()
 
         self.val_acc = BinaryAccuracy()
@@ -73,7 +78,7 @@ class TfidfLogReg(pl.LightningModule):
         }
 
     def forward(self, x):
-        return self.linear(x).squeeze(1)
+        return self.net(x).squeeze(1)
 
     def training_step(self, batch, batch_idx):
         x, y = batch

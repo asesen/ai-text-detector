@@ -7,7 +7,7 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 from ai_text_detector.gdrive import download_data_from_gdrive
-from ai_text_detector.model import TfidfDataModule, TfidfLogReg
+from ai_text_detector.model import BinaryClassNN, TfidfDataModule
 from ai_text_detector.plots import plot_training_curves
 from pytorch_lightning.loggers import MLFlowLogger
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -27,6 +27,8 @@ def train(cfg):
     # ======================
     git_commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
     exp.log_param(run_id, "git_commit", git_commit)
+
+    exp.log_param(run_id, "cfg", cfg)
 
     # ======================
     # LOAD DATA
@@ -59,14 +61,14 @@ def train(cfg):
 
     # сохраняем tf-idf (tf-idx)
     Path("models").mkdir(exist_ok=True)
-    joblib.dump(vectorizer, "models/tfidf.joblib")
+    joblib.dump(vectorizer, cfg.export.tfidf.output_path)
 
     # ======================
     # DATAMODULE + MODEL
     # ======================
     dm = TfidfDataModule(X_train, y_train, X_val, y_val, cfg)
 
-    model = TfidfLogReg(
+    model = BinaryClassNN(
         input_dim=X_train.shape[1],
         cfg=cfg,
     )
@@ -75,7 +77,7 @@ def train(cfg):
         max_epochs=cfg.training.epochs,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
         devices=1,
-        log_every_n_steps=50,
+        log_every_n_steps=cfg.logging.log_every_n_steps,
         logger=mlf_logger,
     )
 
@@ -90,7 +92,7 @@ def train(cfg):
     # ======================
     # ONNX
     # ======================
-    onnx_path = Path("models/onnx/model.onnx")
+    onnx_path = Path(cfg.export.onnx.output_path)
     onnx_path.parent.mkdir(parents=True, exist_ok=True)
 
     model.eval()

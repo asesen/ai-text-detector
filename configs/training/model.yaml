@@ -1,3 +1,6 @@
 batch_size: 256
 lr: 1e-3
 epochs: 3
+hidden_dim: 10
+dropout: 0.25
+use_trained_vect: 1

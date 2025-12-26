@@ -1,6 +1,7 @@
 import fire
 from ai_text_detector.config import load_config
 from ai_text_detector.gdrive import download_data_from_gdrive
+from ai_text_detector.infer import TextAIClassifier
 from ai_text_detector.train import train
 
 
@@ -22,6 +23,12 @@ class Commands:
         """
         cfg = load_config(overrides)
         download_data_from_gdrive(cfg)
+
+    def predict(self, overrides=None):
+        classifier = TextAIClassifier(load_config())
+        texts = overrides
+        predictions = classifier.predict(texts)
+        return predictions
 
 
 if __name__ == "__main__":
