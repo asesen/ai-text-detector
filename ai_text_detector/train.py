@@ -6,8 +6,9 @@ import joblib
 import pandas as pd
 import pytorch_lightning as pl
 import torch
+from ai_text_detector.data_module import TfidfDataModule
 from ai_text_detector.gdrive import download_data_from_gdrive
-from ai_text_detector.model import BinaryClassNN, TfidfDataModule
+from ai_text_detector.model import BinaryClassNN
 from ai_text_detector.plots import plot_training_curves
 from pytorch_lightning.loggers import MLFlowLogger
 from sklearn.feature_extraction.text import TfidfVectorizer
