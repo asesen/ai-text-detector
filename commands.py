@@ -1,8 +1,8 @@
 import fire
 from ai_text_detector.config import load_config
-from ai_text_detector.gdrive import download_data_from_gdrive
 from ai_text_detector.infer import TextAIClassifier
 from ai_text_detector.train import train
+from scripts.gdrive import download_data_from_gdrive
 
 
 class Commands:
