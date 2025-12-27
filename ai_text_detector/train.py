@@ -49,15 +49,15 @@ def train(cfg):
         sublinear_tf=True,
     )
 
-    X_train = vectorizer.fit_transform(
+    vectors_train = vectorizer.fit_transform(
         train_df[cfg.preprocessing.dataset.text_column].values
     ).astype("float32")
-    X_val = vectorizer.transform(
+    vectors_val = vectorizer.transform(
         val_df[cfg.preprocessing.dataset.text_column].values
     ).astype("float32")
 
-    y_train = train_df[cfg.preprocessing.dataset.label_column].values
-    y_val = val_df[cfg.preprocessing.dataset.label_column].values
+    label_train = train_df[cfg.preprocessing.dataset.label_column].values
+    label_val = val_df[cfg.preprocessing.dataset.label_column].values
 
     # сохраняем tf-idf (tf-idx)
     Path("models").mkdir(exist_ok=True)
@@ -66,10 +66,10 @@ def train(cfg):
     # ======================
     # DATAMODULE + MODEL
     # ======================
-    dm = TfidfDataModule(X_train, y_train, X_val, y_val, cfg)
+    dm = TfidfDataModule(vectors_train, label_train, vectors_val, label_val, cfg)
 
     model = BinaryClassNN(
-        input_dim=X_train.shape[1],
+        input_dim=vectors_train.shape[1],
         cfg=cfg,
     )
 
@@ -98,7 +98,7 @@ def train(cfg):
     model.eval()
     model.cpu()
 
-    dummy = torch.randn(1, X_train.shape[1], dtype=torch.float32)
+    dummy = torch.randn(1, vectors_train.shape[1], dtype=torch.float32)
 
     torch.onnx.export(
         model,
